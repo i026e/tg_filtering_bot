@@ -1,0 +1,16 @@
+.idea/
+__pycache__/
+
+# Databases
+*.db
+*.session
+
+# settings
+.env
+
+
+# Environments
+.venv/
+venv/
+
+
