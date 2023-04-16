@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "tg_filtering_bot"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 telethon = "^1.27.0"
 pydantic = {extras = ["dotenv"], version = "^1.10.7"}
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.9"}
