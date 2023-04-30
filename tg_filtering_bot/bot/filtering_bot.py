@@ -13,6 +13,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, Message
 from aiogram.utils import executor
 from aiogram.utils.exceptions import MessageToForwardNotFound, ChatNotFound
+from aiogram.contrib.middlewares.i18n import I18nMiddleware
 
 from tg_filtering_bot.async_queue import AsyncQueue
 from tg_filtering_bot.config import settings
@@ -24,6 +25,10 @@ from tg_filtering_bot.crud.crud import (
 )
 from tg_filtering_bot.crud.dto import UserFilterDTO, UserChatDTO, ForwardMessageDTO
 from tg_filtering_bot.logger import get_logger
+
+
+I18N = I18nMiddleware(settings.I18N_DOMAIN, settings.LOCALES_DIR)
+_ = I18N.gettext
 
 
 class UserState(StatesGroup):
@@ -59,6 +64,7 @@ class FilteringBot:
         self.storage = MemoryStorage()
         self.bot = Bot(settings.BOT_TOKEN)
         self.dispatcher = Dispatcher(self.bot, storage=self.storage)
+        self.dispatcher.middleware.setup(I18N)
 
         self.LOGGER.info("Bot created")
 
@@ -107,19 +113,19 @@ class FilteringBot:
         await self.bot.set_my_commands(commands=[
             BotCommand(
                 command="add",
-                description="Add new address"
+                description=_("Add new address")
             ),
             BotCommand(
                 command="list",
-                description="List addresses"
+                description=_("List addresses")
             ),
             BotCommand(
                 command="delete",
-                description="Delete address"
+                description=_("Delete address")
             ),
             BotCommand(
                 command="cancel",
-                description="Cancel previous command"
+                description=_("Cancel previous command")
             ),
         ])
 
@@ -169,17 +175,17 @@ class FilteringBot:
         await self._register_user(message)
         await self._clear_state(state)
 
-        await message.reply(
-            f"Hi there, "
-            f"I am a filtering bot for '{settings.LISTENER_CHANNEL_NAME}' channel. "
-            f"Please use command /add to add a new address."
-        )
+        await message.reply(_("""Hi there,
+I am a filtering bot for '{channel}' channel. 
+Please use command {command} to add a new address.""").format(
+            channel=settings.LISTENER_CHANNEL_NAME, command="/add"
+        ))
 
     async def add_command(self, message: Message, state: FSMContext) -> None:
         await self._register_user(message)
 
         await state.set_state(UserState.adding)
-        await self.bot.send_message(message.chat.id, "Please type street name to create a filter")
+        await self.bot.send_message(message.chat.id, _("Please type street name to create a filter"))
 
     async def delete_command(self, message: Message, state: FSMContext) -> None:
         await self._register_user(message)
@@ -187,7 +193,7 @@ class FilteringBot:
         filters = await get_user_filters(user_id=message.from_user.id)
 
         if not filters:
-            return await message.reply("You have no addresses to delete")
+            return await message.reply(_("You have no addresses to delete"))
 
         await state.set_state(UserState.deleting)
 
@@ -199,26 +205,26 @@ class FilteringBot:
                 order=i,
                 filter_=f,
                 button=InlineKeyboardButton(
-                    f"{i}. Delete {f.filter_}",
+                    _("{i}. Delete {address}").format(i=i, address=f.filter_),
                     callback_data=key
                 )
             )
         await state.set_data(storage_data)
         inline_kb = build_delete_filters_markup(storage_data)
-        await message.reply("Click addresses to delete", reply_markup=inline_kb)
+        await message.reply(_("Click addresses to delete"), reply_markup=inline_kb)
 
-    async def list_command(self, message: Message, state: FSMContext) -> None:
+    async def list_command(self, message: Message, state: FSMContext) -> Message:
         await self._register_user(message)
 
         filters = await get_user_filters(user_id=message.from_user.id)
         if not filters:
-            return await message.reply("You have no addresses")
+            return await message.reply(_("You have no addresses"))
 
-        response = "You addresses are:\r\n" + "\r\n".join(
+        response = _("You addresses are:") + "\r\n" + "\r\n".join(
             f"{i}. {f.filter_}" for i, f in enumerate(filters, start=1)
         )
 
-        await message.reply(response)
+        return await message.reply(response)
 
     async def cancel_command(self, message: Message, state: FSMContext) -> None:
         await self._register_user(message)
@@ -234,16 +240,18 @@ class FilteringBot:
         await add_filter(user_filter)
 
 #        await self.bot.delete_state(message.from_user.id, message.chat.id)
-        await self.bot.send_message(message.chat.id, f"Filter '{address}' was added for monitoring")
+        await self.bot.send_message(
+            message.chat.id, _("Filter '{address}' was added for monitoring").format(address=address)
+        )
         await self._clear_state(state)
 
-    async def delete_address(self, event: CallbackQuery, state: FSMContext) -> None:
+    async def delete_address(self, event: CallbackQuery, state: FSMContext) -> Message:
         self.LOGGER.warning(event)
 
         storage_data = await state.get_data()
 
         if not storage_data or event.data not in storage_data:
-            return await event.message.answer("No address to delete")
+            return await event.message.answer(_("No address to delete"))
 
         delete_filter_data = storage_data.pop(event.data)
         await disable_filter(delete_filter_data.filter_)
@@ -251,7 +259,9 @@ class FilteringBot:
         await state.set_data(storage_data)
 
         await event.message.edit_reply_markup(build_delete_filters_markup(storage_data))
-        return await event.message.answer(f"Filter '{delete_filter_data.filter_.filter_}' was deleted")
+        return await event.message.answer(
+            _("Filter '{address}' was deleted").format(address=delete_filter_data.filter_.filter_)
+        )
 
     async def send_message_to_user(self, forward_message: ForwardMessageDTO) -> None:
         self.LOGGER.debug(

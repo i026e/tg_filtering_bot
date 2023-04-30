@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Union
 
 from pydantic import BaseSettings
@@ -8,6 +9,8 @@ class Settings(BaseSettings):
         env_file = '.env'
         env_file_encoding = 'utf-8'
         secrets_dir = '/var/run/tg_filtering_bot'
+
+    BASE_DIR: Path = Path(__file__).parent
 
     # Get it from https://my.telegram.org/apps
     LISTENER_API_ID: str
@@ -24,6 +27,9 @@ class Settings(BaseSettings):
 
     QUEUE_SIZE = 1024
     DEBUG: bool = False
+
+    I18N_DOMAIN = "FilteringBot"
+    LOCALES_DIR: Path = BASE_DIR / "locales"
 
 
 settings = Settings()
