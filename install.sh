@@ -2,8 +2,10 @@
 
 set -xe
 
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install poetry
 
 poetry install
+
+poetry run filtering_bot_login

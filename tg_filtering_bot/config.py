@@ -23,7 +23,7 @@ class Settings(BaseSettings):
 
     BOT_TOKEN: str
 
-    SQLALCHEMY_DATABASE_URI: str = "sqlite+aiosqlite:///tg_filtering_bot.db"
+    SQLALCHEMY_DATABASE_URI: str = "sqlite+aiosqlite://" + str(BASE_DIR / "tg_filtering_bot.db")
 
     QUEUE_SIZE = 1024
     DEBUG: bool = False

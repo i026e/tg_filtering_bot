@@ -24,6 +24,7 @@ sqlalchemy = {extras = ["mypy"], version = "^2.0.9"}
 max-line-length = 120
 
 [tool.poetry.scripts]
+filtering_bot_login = "tg_filtering_bot.channel_client.client:login"
 filtering_bot = "tg_filtering_bot.__main__:main"
 
 [build-system]

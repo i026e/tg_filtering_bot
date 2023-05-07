@@ -74,5 +74,12 @@ def main():
     queue.sync_queue.get()
 
 
+def login():
+    queue: multiprocessing.Queue[QueueMessageDTO] = multiprocessing.Queue(maxsize=settings.QUEUE_SIZE)
+    async_queue = AsyncQueue(queue)
+    monitoring_client = MonitoringClient(async_queue)
+    monitoring_client.start()
+
+
 if __name__ == "__main__":
-    main()
+    login()
