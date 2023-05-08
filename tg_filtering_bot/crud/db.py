@@ -1,4 +1,5 @@
 import enum
+import logging
 
 from sqlalchemy import Column, Integer, Enum, String, ForeignKey, DateTime, Boolean, func, PrimaryKeyConstraint
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -67,6 +68,7 @@ class UserMessage(Base):
     pk = PrimaryKeyConstraint(user_id, message_id)
 
 
+logging.warning("Using database %s", settings.SQLALCHEMY_DATABASE_URI)
 engine = create_async_engine(settings.SQLALCHEMY_DATABASE_URI, echo=True)
 async_session = async_sessionmaker(
     engine, expire_on_commit=False, class_=AsyncSession

@@ -2,6 +2,7 @@ import asyncio
 import atexit
 import dataclasses
 import multiprocessing
+import time
 from typing import Any, Dict
 
 
@@ -303,5 +304,9 @@ def start_filtering_bot() -> AsyncQueue[ForwardMessageDTO]:
     process.start()
     atexit.register(bot.stop_bot)
     atexit.register(process.join)
+
+    time.sleep(1)
+    if process.exitcode is not None:
+        raise RuntimeError("FilteringBot closed after launch")
 
     return message_queue
